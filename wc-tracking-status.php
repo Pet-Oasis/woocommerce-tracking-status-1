@@ -28,57 +28,17 @@ function order_status_date_options(){
  */
 function order_status_date_display(){
     ?>
-    <h2>Product quantity from order</h2>
-
     <?php
-    $orders = wc_get_orders( array(
-        'limit'        => -1, // Query all orders
-        'orderby'      => 'date',
-        'order'        => 'DESC',
-        'meta_key'     => 'processing_date', // The postmeta key field
-        'meta_value'     => null, // The postmeta key value
-        'meta_compare' => '!=', // The comparison argument
-    ));
+    $exampleListTable = new Example_List_Table();
+    $exampleListTable->prepare_items();
     ?>
-
-    <table>
-        <thead>
-        <tr>
-            <th>Order ID</th>
-            <th>Processing Date</th>
-            <th>Dispatch Date</th>
-            <th>Completed Date</th>
-            <th>Processing to Dispatch</th>
-            <th>Processing to Completed</th>
-        </tr>
-        </thead>
-        <tbody>
-        <?php
-        foreach ($orders as $order){
-            $processing_date=get_post_meta($order->get_id(),'processing_date',true);
-            $dispatch_date=get_post_meta($order->get_id(),'dispatch_date',true);
-            $completed_date=get_post_meta($order->get_id(),'completed_date',true);
-
-            echo "<tr>";
-            echo "<td>".$order->get_id()."</td>";
-            echo "<td>".$processing_date."</td>";
-            echo "<td>".$dispatch_date."</td>";
-            echo "<td>".$completed_date."</td>";
-            $processingStamp = strtotime($processing_date);
-            $dispatchStamp = strtotime($dispatch_date);
-            $completedStamp = strtotime($completed_date);
-            $numberDays_dispatch = intval(abs($processingStamp - $dispatchStamp)/86400);
-            $numberDays_completed = intval(abs($processingStamp - $completedStamp)/86400);
-            echo "<td>".$numberDays_dispatch." Days</td>"; // use for point out relation: smaller/greater
-            echo "<td>".$numberDays_completed." Days</td>"; // use for point out relation: smaller/greater
-            echo "</tr>";
-
-        }
-        ?>
-        <td></td>
-        </tbody>
-    </table>
+    <div class="wrap">
+        <div id="icon-users" class="icon32"></div>
+        <h2>Woocommerce tracking order status date</h2>
+        <?php $exampleListTable->display(); ?>
+    </div>
     <?php
+
 }
 
 /*
@@ -89,15 +49,14 @@ function update_order_processing_date ( $order_id )
 {
     $order = wc_get_order($order_id);
     $order_status = $order->get_status();
-    if ($order_status == 'processing') {
-        update_post_meta($order_id, 'processing_date', date("Y/m/d"));
+    if ( $order_status == 'processing') {
+        update_post_meta($order_id,'processing_date',date("Y-m-d H:i:s"));
     }
-    if ($order_status == 'dispatch-ready') {
-        update_post_meta($order_id, 'dispatch_date', date("Y/m/d"));
+    if($order_status=='dispatch-ready'){
+        update_post_meta($order_id,'dispatch_date',date("Y-m-d H:i:s"));
     }
-    if ($order_status == 'completed') {
-        update_post_meta($order_id, 'completed_date', date("Y/m/d"));
-
+    if($order_status=='completed'){
+        update_post_meta($order_id,'completed_date',date("Y-m-d H:i:s"));
     }
 }
 /*
@@ -116,13 +75,210 @@ function update_order_status_date_dashboard( $post_id, $post, $update ){
     $order_status  = $order->get_status();
 
     if ( $order_status == 'processing') {
-        update_post_meta($post_id,'processing_date',date("Y/m/d"));
+        update_post_meta($post_id,'processing_date',date("Y-m-d H:i:s"));
     }
     if($order_status=='dispatch-ready'){
-        update_post_meta($post_id,'dispatch_date',date("Y/m/d"));
+        update_post_meta($post_id,'dispatch_date',date("Y-m-d H:i:s"));
     }
     if($order_status=='completed'){
-        update_post_meta($post_id,'completed_date',date("Y/m/d"));
+        update_post_meta($post_id,'completed_date',date("Y-m-d H:i:s"));
     }
 
+}
+
+// WP_List_Table is not loaded automatically so we need to load it in our application
+if( ! class_exists( 'WP_List_Table' ) ) {
+    require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
+}
+/**
+ * Create a new table class that will extend the WP_List_Table
+ */
+class Example_List_Table extends WP_List_Table
+{
+    /**
+     * Prepare the items for the table to process
+     *
+     * @return Void
+     */
+    public function prepare_items()
+    {
+        $columns = $this->get_columns();
+        $hidden = $this->get_hidden_columns();
+        $sortable = $this->get_sortable_columns();
+
+        $data = $this->table_data();
+        usort( $data, array( &$this, 'sort_data' ) );
+
+        $perPage = 10;
+        $currentPage = $this->get_pagenum();
+        $totalItems = count($data);
+
+        $this->set_pagination_args( array(
+            'total_items' => $totalItems,
+            'per_page'    => $perPage
+        ) );
+
+        $data = array_slice($data,(($currentPage-1)*$perPage),$perPage);
+
+        $this->_column_headers = array($columns, $hidden, $sortable);
+        $this->items = $data;
+    }
+
+    /**
+     * Override the parent columns method. Defines the columns to use in your listing table
+     *
+     * @return Array
+     */
+    public function get_columns()
+    {
+        $columns = array(
+            'id'          => 'ID',
+            'processing_date'       => 'Processing Date',
+            'dispatch_date' => 'Dispatch Date',
+            'completed_date'        => 'Completed Date',
+            'processing_dispatch'    => 'Processing to Dispatch',
+            'processing_completed'      => 'Processing to Completed'
+        );
+
+        return $columns;
+    }
+
+    /**
+     * Define which columns are hidden
+     *
+     * @return Array
+     */
+    public function get_hidden_columns()
+    {
+        return array();
+    }
+
+    /**
+     * Define the sortable columns
+     *
+     * @return Array
+     */
+    public function get_sortable_columns()
+    {
+        return array('title' => array('title', false));
+    }
+
+    /**
+     * Get the table data
+     *
+     * @return Array
+     */
+    private function table_data()
+    {
+        $orders = wc_get_orders( array(
+            'limit'        => -1, // Query all orders
+            'orderby'      => 'date',
+            'order'        => 'DESC',
+            'meta_key'     => 'processing_date', // The postmeta key field
+            'meta_value'     => null, // The postmeta key value
+            'meta_compare' => '!=', // The comparison argument
+        ));
+        $data = array();
+
+        foreach ($orders as $order){
+            $processing_date=get_post_meta($order->get_id(),'processing_date',true);
+            $dispatch_date=get_post_meta($order->get_id(),'dispatch_date',true);
+            $completed_date=get_post_meta($order->get_id(),'completed_date',true);
+
+            $processing_date1 = new DateTime($processing_date);
+
+            if(!empty($dispatch_date)){
+                $dispatch_date1 = new DateTime($dispatch_date);
+                $numberDays_dispatch = $dispatch_date1->diff($processing_date1);
+                $numberDays_dispatch1=$numberDays_dispatch->format('%a Day and %h hours');
+
+            }
+            else{
+                $numberDays_dispatch1="";
+            }
+            if(!empty($completed_date)){
+                $completed_date1 = new DateTime($completed_date);
+                $numberDays_completed = $completed_date1->diff($processing_date1);
+                $numberDays_completed1 =$numberDays_completed->format('%a Day and %h hours');
+            }
+            else{
+                $numberDays_completed1="";
+            }
+
+            $data[] = array(
+                'id'          => $order->get_id(),
+                'processing_date'       => $processing_date,
+                'dispatch_date' => $dispatch_date,
+                'completed_date'        => $completed_date,
+                'processing_dispatch'    => $numberDays_dispatch1,
+                'processing_completed'      => $numberDays_completed1
+            );
+
+
+        }
+
+
+
+
+
+        return $data;
+    }
+
+    /**
+     * Define what data to show on each column of the table
+     *
+     * @param  Array $item        Data
+     * @param  String $column_name - Current column name
+     *
+     * @return Mixed
+     */
+    public function column_default( $item, $column_name )
+    {
+        switch( $column_name ) {
+            case 'id':
+            case 'processing_date':
+            case 'dispatch_date':
+            case 'completed_date':
+            case 'processing_dispatch':
+            case 'processing_completed':
+                return $item[ $column_name ];
+
+            default:
+                return print_r( $item, true ) ;
+        }
+    }
+
+    /**
+     * Allows you to sort the data by the variables set in the $_GET
+     *
+     * @return Mixed
+     */
+    private function sort_data( $a, $b )
+    {
+        // Set defaults
+        $orderby = 'processing_date';
+        $order = 'asc';
+
+        // If orderby is set, use this as the sort column
+        if(!empty($_GET['orderby']))
+        {
+            $orderby = $_GET['orderby'];
+        }
+
+        // If order is set use this as the order
+        if(!empty($_GET['order']))
+        {
+            $order = $_GET['order'];
+        }
+
+
+        $result = strcmp( $a[$orderby], $b[$orderby] );
+
+        if($order === 'asc')
+        {
+            return $result;
+        }
+
+        return -$result;
+    }
 }
