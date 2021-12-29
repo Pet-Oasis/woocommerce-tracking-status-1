@@ -49,14 +49,14 @@ function update_order_processing_date ( $order_id )
 {
     $order = wc_get_order($order_id);
     $order_status = $order->get_status();
-    if ( $order_status == 'processing') {
-        update_post_meta($order_id,'processing_date',date("Y-m-d H:i:s"));
+    if ( $order_status == 'processing' && empty(get_post_meta($order_id,'processing_date',true))) {
+        update_post_meta($order_id,'processing_date',current_time( 'Y-m-d H:i:s' ));
     }
-    if($order_status=='dispatch-ready'){
-        update_post_meta($order_id,'dispatch_date',date("Y-m-d H:i:s"));
+    if($order_status=='dispatch-ready' && empty(get_post_meta($order_id,'dispatch_date',true))){
+        update_post_meta($order_id,'dispatch_date',current_time( 'Y-m-d H:i:s' ));
     }
-    if($order_status=='completed'){
-        update_post_meta($order_id,'completed_date',date("Y-m-d H:i:s"));
+    if($order_status=='completed' && empty(get_post_meta($order_id,'completed_date',true))){
+        update_post_meta($order_id,'completed_date',current_time( 'Y-m-d H:i:s' ));
     }
 }
 /*
@@ -74,14 +74,14 @@ function update_order_status_date_dashboard( $post_id, $post, $update ){
     $order = wc_get_order( $post_id );
     $order_status  = $order->get_status();
 
-    if ( $order_status == 'processing') {
-        update_post_meta($post_id,'processing_date',date("Y-m-d H:i:s"));
+    if ( $order_status == 'processing' && empty(get_post_meta($post_id,'processing_date',true))) {
+        update_post_meta($post_id,'processing_date',current_time( 'Y-m-d H:i:s' ));
     }
-    if($order_status=='dispatch-ready'){
-        update_post_meta($post_id,'dispatch_date',date("Y-m-d H:i:s"));
+    if($order_status=='dispatch-ready' && empty(get_post_meta($post_id,'dispatch_date',true))){
+        update_post_meta($post_id,'dispatch_date',current_time( 'Y-m-d H:i:s' ));
     }
-    if($order_status=='completed'){
-        update_post_meta($post_id,'completed_date',date("Y-m-d H:i:s"));
+    if($order_status=='completed' && empty(get_post_meta($post_id,'completed_date',true))){
+        update_post_meta($post_id,'completed_date',current_time( 'Y-m-d H:i:s' ));
     }
 
 }
@@ -190,7 +190,7 @@ class Example_List_Table extends WP_List_Table
             if(!empty($dispatch_date)){
                 $dispatch_date1 = new DateTime($dispatch_date);
                 $numberDays_dispatch = $dispatch_date1->diff($processing_date1);
-                $numberDays_dispatch1=$numberDays_dispatch->format('%a Day and %h hours');
+                $numberDays_dispatch1=$numberDays_dispatch->format('%a Day and %h hours and %i minutes');
 
             }
             else{
@@ -199,7 +199,7 @@ class Example_List_Table extends WP_List_Table
             if(!empty($completed_date)){
                 $completed_date1 = new DateTime($completed_date);
                 $numberDays_completed = $completed_date1->diff($processing_date1);
-                $numberDays_completed1 =$numberDays_completed->format('%a Day and %h hours');
+                $numberDays_completed1 =$numberDays_completed->format('%a Day and %h hours and %i minutes');
             }
             else{
                 $numberDays_completed1="";
