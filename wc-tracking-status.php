@@ -1,8 +1,8 @@
 <?php
 /*
-Plugin Name: Woocommerce tracking order status date
+Plugin Name: WooCommerce Order Status Change time tracking
 Plugin URI: https://petoasisksa.com
-Description: Track order status change date.
+Description: This plugin allows you to track the WooCommerce orders status changes, select status types from the plugin options and it will automatically store the date and time for each status change and it will automatically calculate the time between these statuses in Days, Hours, and minutes
 Author: Saleem Summour
 Version: 1.0.0
 Author URI: https://lvendr.com/
@@ -28,10 +28,10 @@ function order_status_date_options(){
  * date for order status menu
  */
 function order_status_date_display(){
-    ?>
-    <?php
+    include_once( plugin_dir_path( __FILE__ ) . 'tracking_table_class.php' );
     $tracking_table = new tracking_status_List_Table();
     $tracking_table->prepare_items();
+
     ?>
     <div class="wrap">
         <div id="icon-users" class="icon32"></div>
@@ -190,42 +190,33 @@ function update_order_processing_date ( $order_id )
     if ( $order_status == substr($order_status1,3) && empty(get_post_meta($order_id,'order_status1',true))) {
         update_post_meta($order_id,'order_status1',current_time( 'Y-m-d H:i:s' ));
     }
-    if($order_status== substr($order_status1,3) && empty(get_post_meta($order_id,'order_status2',true))){
+    if($order_status== substr($order_status2,3) && empty(get_post_meta($order_id,'order_status2',true))){
         update_post_meta($order_id,'order_status2',current_time( 'Y-m-d H:i:s' ));
     }
-    if($order_status== substr($order_status1,3) && empty(get_post_meta($order_id,'order_status3',true))){
+    if($order_status== substr($order_status3,3) && empty(get_post_meta($order_id,'order_status3',true))){
         update_post_meta($order_id,'order_status3',current_time( 'Y-m-d H:i:s' ));
     }
 }
 /*
-     * update the date for order status
-     */
-add_action( 'save_post', 'update_order_status_date_dashboard', 10, 3 );
-function update_order_status_date_dashboard( $post_id, $post, $update ){
+* update the date for order status
+*/
+
+function action_woocommerce_order_status_changed( $order_id, $old_status, $new_status, $order ) {
     $order_status1=get_option('order_status1');
     $order_status2=get_option('order_status2');
     $order_status3=get_option('order_status3');
     $order_status_calculate=get_option('order_status_calculate');
 
 
-    // Orders in backend only
-    if( ! is_admin() ) return;
-    if ( 'shop_order' !== $post->post_type ) {
-        return;
+    if ( $new_status == substr($order_status1,3) && empty(get_post_meta($order_id,'order_status1',true))) {
+        update_post_meta($order_id,'order_status1',current_time( 'Y-m-d H:i:s' ));
     }
-    // Get an instance of the WC_Order object (in a plugin)
-    $order = wc_get_order( $post_id );
-    $order_status  = $order->get_status();
-
-    if ( $order_status == substr($order_status1,3) && empty(get_post_meta($post_id,'order_status1',true))) {
-        update_post_meta($post_id,'order_status1',current_time( 'Y-m-d H:i:s' ));
+    if($new_status==substr($order_status2,3) && empty(get_post_meta($order_id,'order_status2',true))){
+        update_post_meta($order_id,'order_status2',current_time( 'Y-m-d H:i:s' ));
     }
-    if($order_status==substr($order_status2,3) && empty(get_post_meta($post_id,'order_status2',true))){
-        update_post_meta($post_id,'order_status2',current_time( 'Y-m-d H:i:s' ));
-    }
-    if($order_status==substr($order_status3,3) && empty(get_post_meta($post_id,'order_status3',true))){
-        update_post_meta($post_id,'order_status3',current_time( 'Y-m-d H:i:s' ));
+    if($new_status==substr($order_status3,3) && empty(get_post_meta($order_id,'order_status3',true))){
+        update_post_meta($order_id,'order_status3',current_time( 'Y-m-d H:i:s' ));
     }
 
 }
-
+add_action( 'woocommerce_order_status_changed', 'action_woocommerce_order_status_changed', 10, 4 );
