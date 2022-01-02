@@ -35,7 +35,7 @@ function order_status_date_display(){
     ?>
     <div class="wrap">
         <div id="icon-users" class="icon32"></div>
-        <h2>Orders delivery time tracking</h2>
+        <h2>WooCommerce Order Status Change time tracking</h2>
         <?php $tracking_table->display(); ?>
     </div>
     <?php
