@@ -170,7 +170,7 @@ function register_status_setting_options() {
     }
 
 }
-//add_action( 'init', 'register_status_setting_options' );
+add_action( 'init', 'register_status_setting_options' );
 
 /*
  * update the date for order status
