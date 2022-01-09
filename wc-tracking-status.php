@@ -1,8 +1,8 @@
 <?php
 /*
-Plugin Name: Woocommerce tracking order status date
+Plugin Name: WooCommerce Order Status Change time tracking
 Plugin URI: https://petoasisksa.com
-Description: Track order status change date.
+Description: This plugin allows you to track the WooCommerce orders status changes, select status types from the plugin options and it will automatically store the date and time for each status change and it will automatically calculate the time between these statuses in Days, Hours, and minutes
 Author: Saleem Summour
 Version: 1.0.0
 Author URI: https://lvendr.com/
@@ -13,6 +13,7 @@ Author URI: https://lvendr.com/
 */
 function order_status_date_menu() {
     add_menu_page( 'Order status', 'Order status', 'manage_options', 'order-status-id', 'order_status_date_options','',6 );
+    add_submenu_page( 'order-status-id', 'Order status Setting', 'Order status Setting', 'manage_options', 'order_status_settings','order_status_setting_display');
 
 }
 add_action( 'admin_menu', 'order_status_date_menu');
@@ -27,59 +28,149 @@ function order_status_date_options(){
  * date for order status menu
  */
 function order_status_date_display(){
-    ?>
-    <h2>Product quantity from order</h2>
+    include_once( plugin_dir_path( __FILE__ ) . 'tracking_table_class.php' );
+    $tracking_table = new tracking_status_List_Table();
+    $tracking_table->prepare_items();
 
+    ?>
+    <div class="wrap">
+        <div id="icon-users" class="icon32"></div>
+        <h2>WooCommerce Order Status Change time tracking</h2>
+        <?php $tracking_table->display(); ?>
+    </div>
     <?php
-    $orders = wc_get_orders( array(
-        'limit'        => -1, // Query all orders
-        'orderby'      => 'date',
-        'order'        => 'DESC',
-        'meta_key'     => 'processing_date', // The postmeta key field
-        'meta_value'     => null, // The postmeta key value
-        'meta_compare' => '!=', // The comparison argument
-    ));
-    ?>
 
-    <table>
-        <thead>
-        <tr>
-            <th>Order ID</th>
-            <th>Processing Date</th>
-            <th>Dispatch Date</th>
-            <th>Completed Date</th>
-            <th>Processing to Dispatch</th>
-            <th>Processing to Completed</th>
-        </tr>
-        </thead>
-        <tbody>
-        <?php
-        foreach ($orders as $order){
-            $processing_date=get_post_meta($order->get_id(),'processing_date',true);
-            $dispatch_date=get_post_meta($order->get_id(),'dispatch_date',true);
-            $completed_date=get_post_meta($order->get_id(),'completed_date',true);
+}
 
-            echo "<tr>";
-            echo "<td>".$order->get_id()."</td>";
-            echo "<td>".$processing_date."</td>";
-            echo "<td>".$dispatch_date."</td>";
-            echo "<td>".$completed_date."</td>";
-            $processingStamp = strtotime($processing_date);
-            $dispatchStamp = strtotime($dispatch_date);
-            $completedStamp = strtotime($completed_date);
-            $numberDays_dispatch = intval(abs($processingStamp - $dispatchStamp)/86400);
-            $numberDays_completed = intval(abs($processingStamp - $completedStamp)/86400);
-            echo "<td>".$numberDays_dispatch." Days</td>"; // use for point out relation: smaller/greater
-            echo "<td>".$numberDays_completed." Days</td>"; // use for point out relation: smaller/greater
-            echo "</tr>";
+/*
+ * date for order status settings
+ */
+function order_status_setting_display(){
+    $order_status1=get_option('order_status1');
+    $order_status2=get_option('order_status2');
+    $order_status3=get_option('order_status3');
+    $order_status_calculate=get_option('order_status_calculate');
 
+    if(isset($_POST['submit'])){
+        if(isset($_POST['order_status1'])){
+            update_option('order_status1',$_POST['order_status1'],'');
         }
-        ?>
-        <td></td>
-        </tbody>
-    </table>
+        if(isset($_POST['order_status2'])){
+            update_option('order_status2',$_POST['order_status2'],'');
+        }
+        if(isset($_POST['order_status3'])){
+            update_option('order_status3',$_POST['order_status3'],'');
+        }
+        if(isset($_POST['order_status_calculate'])){
+            update_option('order_status_calculate',$_POST['order_status_calculate'],'');
+        }
+
+    }
+    ?>
+    <div class="wrap">
+        <div id="icon-users" class="icon32"></div>
+        <h2>Orders status time tracking</h2>
+        <form method="post"  novalidate="novalidate">
+            <table class="form-table" role="presentation">
+
+                <tbody>
+                <tr>
+                    <th scope="row"><label for="order_status1">Order Status1</label></th>
+                    <td>
+                        <select name="order_status1" id="order_status1">
+                            <option></option>
+                            <?php
+                            foreach (wc_get_order_statuses() as $status_key=>$status_value){
+                                echo '<option value="'.$status_key.'" '.($status_key==$order_status1 ? 'selected' : '').'>'.$status_value.'</option>';
+                            }
+                            ?>
+                        </select>
+                    </td>
+
+                </tr>
+                <tr>
+                    <th scope="row"><label for="order_status2">Order Status2</label></th>
+                    <td>
+                        <select name="order_status2" id="order_status2">
+                            <option></option>
+                            <?php
+                            foreach (wc_get_order_statuses() as $status_key=>$status_value){
+                                echo '<option value="'.$status_key.'" '.($status_key==$order_status2 ? 'selected' : '').'>'.$status_value.'</option>';
+
+                            }
+
+                            ?>
+                        </select>
+                    </td>
+
+                </tr>
+                <tr>
+                    <th scope="row"><label for="order_status3">Order Status3</label></th>
+                    <td>
+                        <select name="order_status3" id="order_status3">
+                            <option></option>
+                            <?php
+                            foreach (wc_get_order_statuses() as $status_key=>$status_value){
+                                echo '<option value="'.$status_key.'" '.($status_key==$order_status3 ? 'selected' : '').'>'.$status_value.'</option>';
+                            }
+
+                            ?>
+                        </select>
+                    </td>
+
+                </tr>
+                <tr>
+                    <th scope="row">Calculate by</th>
+                    <td>
+                        <fieldset>
+                            <label for="order_status_calculate_days">
+                                <input name="order_status_calculate[]" <?php echo (in_array('days',$order_status_calculate) ? ' checked="checked"' : '');?> type="checkbox" id="order_status_calculate_days" value="days">
+                                Days
+                            </label>
+                            <label for="order_status_calculate_hours">
+                                <input name="order_status_calculate[]" <?php echo (in_array('hours',$order_status_calculate) ? ' checked="checked"' : '');?>  type="checkbox" id="order_status_calculate_hours" value="hours">
+                                Hours
+                            </label>
+                            <label for="order_status_calculate_minutes">
+                                <input name="order_status_calculate[]" <?php echo (in_array('minutes',$order_status_calculate) ? ' checked="checked"' : '');?>  type="checkbox" id="order_status_calculate_minutes" value="minutes">
+                                Minutes
+                            </label>
+                        </fieldset>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+
+            <p class="submit">
+                <input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes">
+            </p>
+        </form>
+    </div>
+
     <?php
 }
+
+/*
+ * Register Options for the first time
+ */
+function register_status_setting_options() {
+
+    if ( !get_option('order_status1') ){
+        add_option('order_status1','processing','','yes');
+    }
+    if ( !get_option('order_status2') ){
+        add_option('order_status2','dispatch','','yes');
+    }
+    if ( !get_option('order_status3') ){
+        add_option('order_status3','completed','','yes');
+    }
+    if ( !get_option('order_status_calculate') ){
+        add_option('order_status_calculate','days','','yes');
+    }
+
+}
+//add_action( 'init', 'register_status_setting_options' );
 
 /*
  * update the date for order status
@@ -89,40 +180,23 @@ function update_order_processing_date ( $order_id )
 {
     $order = wc_get_order($order_id);
     $order_status = $order->get_status();
-    if ($order_status == 'processing') {
-        update_post_meta($order_id, 'processing_date', date("Y/m/d"));
-    }
-    if ($order_status == 'dispatch-ready') {
-        update_post_meta($order_id, 'dispatch_date', date("Y/m/d"));
-    }
-    if ($order_status == 'completed') {
-        update_post_meta($order_id, 'completed_date', date("Y/m/d"));
+    foreach (wc_get_order_statuses() as $status_key=>$status_value){
+        if ( $order_status == substr($status_key,3) && empty(get_post_meta($order_id,substr($status_key,3).'_time',true))) {
+            update_post_meta($order_id,substr($status_key,3).'_time',current_time( 'Y-m-d H:i:s' ));
+        }
 
     }
 }
 /*
-     * update the date for order status
-     */
-add_action( 'save_post', 'update_order_status_date_dashboard', 10, 3 );
-function update_order_status_date_dashboard( $post_id, $post, $update ){
+* update the date for order status
+*/
+function action_woocommerce_order_status_changed( $order_id, $old_status, $new_status, $order ) {
+    foreach (wc_get_order_statuses() as $status_key=>$status_value){
+        if ( $new_status == substr($status_key,3) && empty(get_post_meta($order_id,substr($status_key,3).'_time',true))) {
+            update_post_meta($order_id,substr($status_key,3).'_time',current_time( 'Y-m-d H:i:s' ));
+        }
 
-    // Orders in backend only
-    if( ! is_admin() ) return;
-    if ( 'shop_order' !== $post->post_type ) {
-        return;
-    }
-    // Get an instance of the WC_Order object (in a plugin)
-    $order = wc_get_order( $post_id );
-    $order_status  = $order->get_status();
-
-    if ( $order_status == 'processing') {
-        update_post_meta($post_id,'processing_date',date("Y/m/d"));
-    }
-    if($order_status=='dispatch-ready'){
-        update_post_meta($post_id,'dispatch_date',date("Y/m/d"));
-    }
-    if($order_status=='completed'){
-        update_post_meta($post_id,'completed_date',date("Y/m/d"));
     }
 
 }
+add_action( 'woocommerce_order_status_changed', 'action_woocommerce_order_status_changed', 10, 4 );
