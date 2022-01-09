@@ -96,16 +96,16 @@ class tracking_status_List_Table extends WP_List_Table
             'limit'        => -1, // Query all orders
             'orderby'      => 'date',
             'order'        => 'DESC',
-            'meta_key'     => 'order_status1', // The postmeta key field
+            'meta_key'     => substr($order_status1,3).'_time', // The postmeta key field
             'meta_value'     => null, // The postmeta key value
             'meta_compare' => '!=', // The comparison argument
         ));
         $data = array();
 
         foreach ($orders as $order){
-            $order_status1_meta=get_post_meta($order->get_id(),'order_status1',true);
-            $order_status2_meta=get_post_meta($order->get_id(),'order_status2',true);
-            $order_status3_meta=get_post_meta($order->get_id(),'order_status3',true);
+            $order_status1_meta=get_post_meta($order->get_id(),substr($order_status1,3).'_time',true);
+            $order_status2_meta=get_post_meta($order->get_id(),substr($order_status2,3).'_time',true);
+            $order_status3_meta=get_post_meta($order->get_id(),substr($order_status3,3).'_time',true);
 
             $order_status1_date = new DateTime($order_status1_meta);
 

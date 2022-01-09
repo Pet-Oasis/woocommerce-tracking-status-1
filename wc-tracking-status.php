@@ -83,7 +83,6 @@ function order_status_setting_display(){
                             foreach (wc_get_order_statuses() as $status_key=>$status_value){
                                 echo '<option value="'.$status_key.'" '.($status_key==$order_status1 ? 'selected' : '').'>'.$status_value.'</option>';
                             }
-
                             ?>
                         </select>
                     </td>
@@ -179,43 +178,24 @@ function register_status_setting_options() {
 add_action( 'woocommerce_thankyou', 'update_order_processing_date', 20 );
 function update_order_processing_date ( $order_id )
 {
-    $order_status1=get_option('order_status1');
-    $order_status2=get_option('order_status2');
-    $order_status3=get_option('order_status3');
-    $order_status_calculate=get_option('order_status_calculate');
-
     $order = wc_get_order($order_id);
     $order_status = $order->get_status();
+    foreach (wc_get_order_statuses() as $status_key=>$status_value){
+        if ( $order_status == substr($status_key,3) && empty(get_post_meta($order_id,substr($status_key,3).'_time',true))) {
+            update_post_meta($order_id,substr($status_key,3).'_time',current_time( 'Y-m-d H:i:s' ));
+        }
 
-    if ( $order_status == substr($order_status1,3) && empty(get_post_meta($order_id,'order_status1',true))) {
-        update_post_meta($order_id,'order_status1',current_time( 'Y-m-d H:i:s' ));
-    }
-    if($order_status== substr($order_status2,3) && empty(get_post_meta($order_id,'order_status2',true))){
-        update_post_meta($order_id,'order_status2',current_time( 'Y-m-d H:i:s' ));
-    }
-    if($order_status== substr($order_status3,3) && empty(get_post_meta($order_id,'order_status3',true))){
-        update_post_meta($order_id,'order_status3',current_time( 'Y-m-d H:i:s' ));
     }
 }
 /*
 * update the date for order status
 */
-
 function action_woocommerce_order_status_changed( $order_id, $old_status, $new_status, $order ) {
-    $order_status1=get_option('order_status1');
-    $order_status2=get_option('order_status2');
-    $order_status3=get_option('order_status3');
-    $order_status_calculate=get_option('order_status_calculate');
+    foreach (wc_get_order_statuses() as $status_key=>$status_value){
+        if ( $new_status == substr($status_key,3) && empty(get_post_meta($order_id,substr($status_key,3).'_time',true))) {
+            update_post_meta($order_id,substr($status_key,3).'_time',current_time( 'Y-m-d H:i:s' ));
+        }
 
-
-    if ( $new_status == substr($order_status1,3) && empty(get_post_meta($order_id,'order_status1',true))) {
-        update_post_meta($order_id,'order_status1',current_time( 'Y-m-d H:i:s' ));
-    }
-    if($new_status==substr($order_status2,3) && empty(get_post_meta($order_id,'order_status2',true))){
-        update_post_meta($order_id,'order_status2',current_time( 'Y-m-d H:i:s' ));
-    }
-    if($new_status==substr($order_status3,3) && empty(get_post_meta($order_id,'order_status3',true))){
-        update_post_meta($order_id,'order_status3',current_time( 'Y-m-d H:i:s' ));
     }
 
 }
